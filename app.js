@@ -32,9 +32,7 @@ const firebaseConfig = {
   storageBucket: "zexus-8c69d.firebasestorage.app",
   messagingSenderId: "856434117801",
   appId: "1:856434117801:web:aba02727a0ce94e1516db8",
-
-  databaseURL:
-    "https://zexus-8c69d-default-rtdb.asia-southeast1.firebasedatabase.app"
+  databaseURL: "https://zexus-8c69d-default-rtdb.asia-southeast1.firebasedatabase.app"
 };
 
 
@@ -80,6 +78,7 @@ const messageInput = document.querySelector("#messageInput");
 const pfpInput = document.querySelector("#pfpInput");
 const imageInput = document.querySelector("#imageInput");
 const messageCount = document.querySelector("#messageCount");
+const authStatus = document.querySelector("#authStatus");
 
 
 const fallbackAvatar =
@@ -93,23 +92,22 @@ const fallbackAvatar =
   `);
 
 
-function select(selector) {
-  return document.querySelector(selector);
-}
-
-
 function setStatus(message) {
-  formStatus.textContent = message || "";
+  if (formStatus) {
+    formStatus.textContent = message || "";
+  }
 }
 
 
 function showEmpty(element, message) {
+  if (!element) return;
   element.textContent = message;
   element.classList.remove("hidden");
 }
 
 
 function hideEmpty(element) {
+  if (!element) return;
   element.textContent = "";
   element.classList.add("hidden");
 }
@@ -117,12 +115,7 @@ function hideEmpty(element) {
 
 function currentRoute() {
   const route = location.hash.replace("#", "").toLowerCase();
-
-  if (routes[route]) {
-    return route;
-  }
-
-  return "home";
+  return routes[route] ? route : "home";
 }
 
 
@@ -130,7 +123,9 @@ function navigate() {
   const route = currentRoute();
 
   Object.entries(routes).forEach(([name, element]) => {
-    element.classList.toggle("hidden", name !== route);
+    if (element) {
+      element.classList.toggle("hidden", name !== route);
+    }
   });
 
   document.querySelectorAll(".bottom-nav a").forEach(link => {
@@ -143,9 +138,7 @@ function navigate() {
 
 
 function formatTime(timestamp) {
-  if (!timestamp) {
-    return "just now";
-  }
+  if (!timestamp) return "just now";
 
   const date = new Date(timestamp);
   const difference = Math.max(
@@ -155,25 +148,16 @@ function formatTime(timestamp) {
 
   const minutes = Math.floor(difference / 60000);
 
-  if (minutes < 1) {
-    return "just now";
-  }
-
-  if (minutes < 60) {
-    return `${minutes}m ago`;
-  }
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
 
   const hours = Math.floor(minutes / 60);
 
-  if (hours < 24) {
-    return `${hours}h ago`;
-  }
+  if (hours < 24) return `${hours}h ago`;
 
   const days = Math.floor(hours / 24);
 
-  if (days < 7) {
-    return `${days}d ago`;
-  }
+  if (days < 7) return `${days}d ago`;
 
   return date.toLocaleDateString();
 }
@@ -206,9 +190,7 @@ function getFilteredPosts() {
 
 
 async function uploadImage(file, folder, maxMegabytes) {
-  if (!file) {
-    return "";
-  }
+  if (!file) return "";
 
   const allowedTypes = [
     "image/jpeg",
@@ -262,35 +244,34 @@ async function createPost(postData) {
 }
 
 
-async function updatePost(postId, postData) {
+async function editPost(postId, postData) {
+  const post = state.posts.find(item => item.id === postId);
+
+  if (!post || post.ownerId !== state.user.uid) {
+    throw new Error("You can only edit your own line.");
+  }
+
   await update(ref(db, `posts/${postId}`), {
     ...postData,
+    ownerId: post.ownerId,
+    votes: Number(post.votes || 0),
+    visibility: "public",
     updatedAt: Date.now()
   });
 }
 
 
 async function deletePost(post) {
-  if (
-    !state.user ||
-    post.ownerId !== state.user.uid
-  ) {
-    setStatus(
-      "You can only delete your own line."
-    );
+  if (!state.user || post.ownerId !== state.user.uid) {
+    setStatus("You can only delete your own line.");
     return;
   }
 
-  const confirmed = confirm(
-    "Delete this line permanently?"
-  );
-
-  if (!confirmed) {
+  if (!confirm("Delete this line permanently?")) {
     return;
   }
 
   await remove(ref(db, `posts/${post.id}`));
-
   setStatus("Line deleted.");
 }
 
@@ -313,9 +294,7 @@ async function votePost(post) {
 
   await runTransaction(
     votesReference,
-    currentVotes => {
-      return Number(currentVotes || 0) + 1;
-    }
+    currentVotes => Number(currentVotes || 0) + 1
   );
 
   localStorage.setItem(
@@ -330,9 +309,7 @@ async function copyLine(text) {
     await navigator.clipboard.writeText(text);
     setStatus("Line copied.");
   } catch {
-    setStatus(
-      "Copy is not supported in this browser."
-    );
+    setStatus("Copy is not supported here.");
   }
 }
 
@@ -341,75 +318,37 @@ function renderPost(post, target) {
   const fragment =
     template.content.cloneNode(true);
 
-  const card =
-    fragment.querySelector(".post-card");
-
-  const avatar =
-    fragment.querySelector(".avatar");
-
-  const username =
-    fragment.querySelector(".post-username");
-
-  const time =
-    fragment.querySelector(".post-time");
-
-  const category =
-    fragment.querySelector(".post-category");
-
-  const message =
-    fragment.querySelector(".post-message");
-
-  const image =
-    fragment.querySelector(".post-image");
-
-  const voteButton =
-    fragment.querySelector(".vote-button");
-
-  const voteCount =
-    fragment.querySelector(".vote-count");
-
-  const copyButton =
-    fragment.querySelector(".copy-button");
-
-  const editButton =
-    fragment.querySelector(".edit-button");
-
-  const deleteButton =
-    fragment.querySelector(".delete-button");
-
+  const card = fragment.querySelector(".post-card");
+  const avatar = fragment.querySelector(".avatar");
+  const username = fragment.querySelector(".post-username");
+  const time = fragment.querySelector(".post-time");
+  const category = fragment.querySelector(".post-category");
+  const message = fragment.querySelector(".post-message");
+  const image = fragment.querySelector(".post-image");
+  const voteButton = fragment.querySelector(".vote-button");
+  const voteCount = fragment.querySelector(".vote-count");
+  const copyButton = fragment.querySelector(".copy-button");
+  const editButton = fragment.querySelector(".edit-button");
+  const deleteButton = fragment.querySelector(".delete-button");
 
   avatar.src = post.pfpUrl || fallbackAvatar;
-  username.textContent =
-    post.username || "anonymous";
-
-  time.textContent =
-    formatTime(post.createdAt);
-
+  username.textContent = post.username || "anonymous";
+  time.textContent = formatTime(post.createdAt);
   category.textContent =
     String(post.category || "Random").toUpperCase();
-
-  message.textContent =
-    post.message || "";
-
-  voteCount.textContent =
-    Number(post.votes || 0);
-
+  message.textContent = post.message || "";
+  voteCount.textContent = Number(post.votes || 0);
 
   if (post.imageUrl) {
     image.src = post.imageUrl;
     image.classList.remove("hidden");
   }
 
-
   if (hasVoted(post.id)) {
     voteButton.classList.add("voted");
   }
 
-
-  if (
-    state.user &&
-    post.ownerId === state.user.uid
-  ) {
+  if (state.user && post.ownerId === state.user.uid) {
     editButton.classList.remove("hidden");
     deleteButton.classList.remove("hidden");
 
@@ -422,34 +361,26 @@ function renderPost(post, target) {
       "click",
       () => {
         deletePost(post).catch(error => {
-          setStatus(
-            error.message || "Delete failed."
-          );
+          setStatus(error.message || "Delete failed.");
         });
       }
     );
   }
 
-
   voteButton.addEventListener(
     "click",
     () => {
       votePost(post).catch(error => {
-        setStatus(
-          error.message || "Vote failed."
-        );
+        setStatus(error.message || "Vote failed.");
       });
     }
   );
-
 
   copyButton.addEventListener(
     "click",
     () => copyLine(post.message || "")
   );
 
-
-  card.dataset.postId = post.id;
   target.appendChild(fragment);
 }
 
@@ -468,10 +399,7 @@ function renderFeed() {
   const posts = getFilteredPosts();
 
   if (!posts.length) {
-    showEmpty(
-      feedState,
-      "Nothing found."
-    );
+    showEmpty(feedState, "Nothing found.");
     return;
   }
 
@@ -487,17 +415,14 @@ function renderRanking() {
   ranking.innerHTML = "";
 
   const rankedPosts = [...state.posts]
-    .sort((first, second) => {
-      return Number(second.votes || 0) -
-        Number(first.votes || 0);
+    .sort((a, b) => {
+      return Number(b.votes || 0) -
+        Number(a.votes || 0);
     })
     .slice(0, 50);
 
   if (!rankedPosts.length) {
-    showEmpty(
-      rankingState,
-      "No rankings yet."
-    );
+    showEmpty(rankingState, "No rankings yet.");
     return;
   }
 
@@ -520,13 +445,11 @@ function renderRanking() {
     const details = document.createElement("div");
 
     const name = document.createElement("strong");
-    name.textContent =
-      post.username || "anonymous";
+    name.textContent = post.username || "anonymous";
 
     const line = document.createElement("div");
     line.className = "rank-message";
-    line.textContent =
-      post.message || "";
+    line.textContent = post.message || "";
 
     details.append(name, line);
 
@@ -535,13 +458,7 @@ function renderRanking() {
     votes.textContent =
       `${Number(post.votes || 0)} ▲`;
 
-    row.append(
-      number,
-      avatar,
-      details,
-      votes
-    );
-
+    row.append(number, avatar, details, votes);
     ranking.appendChild(row);
   });
 }
@@ -573,22 +490,19 @@ function renderProfile() {
 
   const avatar = document.createElement("img");
   avatar.className = "avatar";
-  avatar.src =
-    firstPost?.pfpUrl || fallbackAvatar;
+  avatar.src = firstPost?.pfpUrl || fallbackAvatar;
   avatar.alt = "";
 
   const info = document.createElement("div");
 
   const name = document.createElement("strong");
   name.textContent =
-    firstPost?.username ||
-    "Your anonymous profile";
+    firstPost?.username || "Your anonymous profile";
 
   const metrics = document.createElement("div");
   metrics.className = "profile-metrics";
   metrics.textContent =
-    `${ownPosts.length} lines · ` +
-    `${totalVotes} votes received`;
+    `${ownPosts.length} lines · ${totalVotes} votes received`;
 
   info.append(name, metrics);
   profileSummary.append(avatar, info);
@@ -621,16 +535,10 @@ function startEditing(post) {
   usernameInput.value = post.username || "";
   categoryInput.value = post.category || "";
   messageInput.value = post.message || "";
+  messageCount.textContent = messageInput.value.length;
 
-  messageCount.textContent =
-    messageInput.value.length;
-
-  publishButton.textContent =
-    "UPDATE LINE";
-
-  cancelEditButton.classList.remove(
-    "hidden"
-  );
+  publishButton.textContent = "UPDATE LINE";
+  cancelEditButton.classList.remove("hidden");
 
   setStatus("Editing your line.");
 }
@@ -638,187 +546,99 @@ function startEditing(post) {
 
 function clearForm() {
   form.reset();
-
   editingId.value = "";
   publishButton.textContent = "DROP IT";
-
-  cancelEditButton.classList.add(
-    "hidden"
-  );
-
+  cancelEditButton.classList.add("hidden");
   messageCount.textContent = "0";
   setStatus("");
 }
 
 
-form.addEventListener(
-  "submit",
-  async event => {
-    event.preventDefault();
+form.addEventListener("submit", async event => {
+  event.preventDefault();
 
-    if (!state.user) {
-      setStatus(
-        "Still connecting. Try again."
-      );
-      return;
-    }
-
-    const username =
-      usernameInput.value.trim();
-
-    const category =
-      categoryInput.value;
-
-    const message =
-      messageInput.value.trim();
-
-    const editId =
-      editingId.value;
-
-    const pfpFile =
-      pfpInput.files[0];
-
-    const postImageFile =
-      imageInput.files[0];
-
-
-    if (
-      username.length < 2 ||
-      username.length > 24
-    ) {
-      setStatus(
-        "Username must be 2–24 characters."
-      );
-      return;
-    }
-
-    if (!category) {
-      setStatus(
-        "Choose a category."
-      );
-      return;
-    }
-
-    if (
-      !message ||
-      message.length > 500
-    ) {
-      setStatus(
-        "Message must be between 1 and 500 characters."
-      );
-      return;
-    }
-
-
-    publishButton.disabled = true;
-    setStatus(
-      "Uploading and publishing..."
-    );
-
-    try {
-      let pfpUrl = "";
-      let imageUrl = "";
-
-      if (pfpFile) {
-        pfpUrl =
-          await uploadImage(
-            pfpFile,
-            "pfp",
-            3
-          );
-      }
-
-      if (postImageFile) {
-        imageUrl =
-          await uploadImage(
-            postImageFile,
-            "posts",
-            5
-          );
-      }
-
-      const postData = {
-        username,
-        category,
-        message
-      };
-
-      if (pfpUrl) {
-        postData.pfpUrl = pfpUrl;
-      }
-
-      if (imageUrl) {
-        postData.imageUrl = imageUrl;
-      }
-
-
-      if (editId) {
-        const existingPost =
-          state.posts.find(
-            post => post.id === editId
-          );
-
-        if (
-          !existingPost ||
-          existingPost.ownerId !==
-          state.user.uid
-        ) {
-          throw new Error(
-            "You can only edit your own line."
-          );
-        }
-
-        await updatePost(
-          editId,
-          postData
-        );
-
-        setStatus(
-          "Your line was updated."
-        );
-      } else {
-        await createPost(postData);
-
-        setStatus(
-          "Your line is live."
-        );
-      }
-
-      clearForm();
-      location.hash = "#home";
-    } catch (error) {
-      console.error(error);
-
-      setStatus(
-        error.message ||
-        "Publish failed."
-      );
-    } finally {
-      publishButton.disabled = false;
-    }
+  if (!state.user) {
+    setStatus("Still connecting. Try again.");
+    return;
   }
-);
 
+  const username = usernameInput.value.trim();
+  const category = categoryInput.value;
+  const message = messageInput.value.trim();
+  const editId = editingId.value;
+  const pfpFile = pfpInput.files[0];
+  const postImageFile = imageInput.files[0];
 
-cancelEditButton.addEventListener(
-  "click",
-  () => {
+  if (username.length < 2 || username.length > 24) {
+    setStatus("Username must be 2–24 characters.");
+    return;
+  }
+
+  if (!category) {
+    setStatus("Choose a category.");
+    return;
+  }
+
+  if (!message || message.length > 500) {
+    setStatus("Message must be between 1 and 500 characters.");
+    return;
+  }
+
+  publishButton.disabled = true;
+  setStatus("Publishing...");
+
+  try {
+    let pfpUrl = "";
+    let imageUrl = "";
+
+    if (pfpFile) {
+      pfpUrl = await uploadImage(pfpFile, "pfp", 3);
+    }
+
+    if (postImageFile) {
+      imageUrl = await uploadImage(postImageFile, "posts", 5);
+    }
+
+    const postData = {
+      username,
+      category,
+      message
+    };
+
+    if (pfpUrl) postData.pfpUrl = pfpUrl;
+    if (imageUrl) postData.imageUrl = imageUrl;
+
+    if (editId) {
+      await editPost(editId, postData);
+      setStatus("Your line was updated.");
+    } else {
+      await createPost(postData);
+      setStatus("Your line is live.");
+    }
+
     clearForm();
     location.hash = "#home";
+  } catch (error) {
+    console.error(error);
+    setStatus(error.message || "Publish failed.");
+  } finally {
+    publishButton.disabled = false;
   }
-);
+});
 
 
-messageInput.addEventListener(
-  "input",
-  () => {
-    messageCount.textContent =
-      messageInput.value.length;
-  }
-);
+cancelEditButton.addEventListener("click", () => {
+  clearForm();
+  location.hash = "#home";
+});
 
 
-select("#searchInput").addEventListener(
+messageInput.addEventListener("input", () => {
+  messageCount.textContent = messageInput.value.length;
+});
+
+
+document.querySelector("#searchInput").addEventListener(
   "input",
   event => {
     state.search = event.target.value;
@@ -827,24 +647,15 @@ select("#searchInput").addEventListener(
 );
 
 
-select("#categoryFilters").addEventListener(
+document.querySelector("#categoryFilters").addEventListener(
   "click",
   event => {
-    const button =
-      event.target.closest(
-        "[data-category]"
-      );
+    const button = event.target.closest("[data-category]");
+    if (!button) return;
 
-    if (!button) {
-      return;
-    }
+    state.category = button.dataset.category;
 
-    state.category =
-      button.dataset.category;
-
-    document.querySelectorAll(
-      ".filter"
-    ).forEach(filter => {
+    document.querySelectorAll(".filter").forEach(filter => {
       filter.classList.toggle(
         "active",
         filter === button
@@ -856,61 +667,45 @@ select("#categoryFilters").addEventListener(
 );
 
 
-window.addEventListener(
-  "hashchange",
-  navigate
-);
-
-
+window.addEventListener("hashchange", navigate);
 navigate();
 
 
-onAuthStateChanged(
-  auth,
-  user => {
-    state.user = user;
+onAuthStateChanged(auth, user => {
+  state.user = user;
 
-    select("#authStatus").textContent =
-      user ? "CONNECTED" : "OFFLINE";
+  authStatus.textContent =
+    user ? "CONNECTED" : "OFFLINE";
 
-    renderAll();
-  }
-);
+  renderAll();
+});
 
 
 signInAnonymously(auth).catch(error => {
   console.error(error);
-
-  select("#authStatus").textContent =
-    "AUTH ERROR";
-
+  authStatus.textContent = "AUTH ERROR";
   setStatus(
-    "Anonymous Authentication is not enabled."
+    "Enable Anonymous Authentication in Firebase Console."
   );
 });
 
 
-const postsReference =
-  ref(db, "posts");
-
+const postsReference = ref(db, "posts");
 
 onValue(
   postsReference,
   snapshot => {
-    const data =
-      snapshot.val() || {};
+    const data = snapshot.val() || {};
 
     state.posts = Object.entries(data)
       .map(([id, post]) => ({
         id,
         ...post
       }))
-      .filter(post => {
-        return post.visibility === "public";
-      })
-      .sort((first, second) => {
-        return Number(second.createdAt || 0) -
-          Number(first.createdAt || 0);
+      .filter(post => post.visibility === "public")
+      .sort((a, b) => {
+        return Number(b.createdAt || 0) -
+          Number(a.createdAt || 0);
       });
 
     renderAll();
