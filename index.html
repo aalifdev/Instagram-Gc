@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#080808">
+
+  <title>Zexus — Public LineRank</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <div class="app">
+
+    <header class="topbar">
+      <a href="#home" class="brand">
+        <span class="brand-icon">Z</span>
+        <span>ZEXUS</span>
+      </a>
+
+      <div class="top-actions">
+        <span id="authStatus" class="auth-status">CONNECTING</span>
+
+        <a href="#drop" class="top-drop">
+          + DROP
+        </a>
+      </div>
+    </header>
+
+    <main>
+
+      <!-- HOME -->
+      <section id="homeView" class="view">
+
+        <div class="hero">
+          <div class="hero-content">
+            <p class="eyebrow">PUBLIC LINE RANK</p>
+
+            <h1>
+              DROP<br>
+              YOUR <span>LINE.</span>
+            </h1>
+
+            <p class="hero-description">
+              A public space for sharp replies, funny thoughts,
+              wholesome energy and everything in between.
+            </p>
+          </div>
+
+          <a href="#drop" class="primary-button">
+            DROP A LINE
+          </a>
+        </div>
+
+        <div class="feed-tools">
+
+          <label class="search-box">
+            <span class="search-icon">⌕</span>
+            <input
+              id="searchInput"
+              type="search"
+              placeholder="Search username or line"
+              autocomplete="off"
+            >
+          </label>
+
+          <div id="categoryFilters" class="filters">
+            <button class="filter active" data-category="ALL">
+              ALL
+            </button>
+
+            <button class="filter" data-category="ROAST">
+              ROAST
+            </button>
+
+            <button class="filter" data-category="FLIRTING">
+              FLIRTING
+            </button>
+
+            <button class="filter" data-category="FUNNY">
+              FUNNY
+            </button>
+
+            <button class="filter" data-category="SAVAGE">
+              SAVAGE
+            </button>
+
+            <button class="filter" data-category="WHOLESOME">
+              WHOLESOME
+            </button>
+
+            <button class="filter" data-category="RANDOM">
+              RANDOM
+            </button>
+          </div>
+        </div>
+
+        <div id="feedState" class="empty-state hidden"></div>
+
+        <div id="feed" class="feed"></div>
+      </section>
+
+
+      <!-- RANKING -->
+      <section id="rankView" class="view hidden">
+
+        <div class="page-heading">
+          <p class="eyebrow">THE COMMUNITY BOARD</p>
+
+          <h2>
+            LINE<br>
+            <span>RANK.</span>
+          </h2>
+
+          <p>
+            The highest-voted lines rise to the top.
+          </p>
+        </div>
+
+        <div id="rankingState" class="empty-state hidden"></div>
+
+        <div id="ranking" class="ranking"></div>
+      </section>
+
+
+      <!-- DROP -->
+      <section id="dropView" class="view hidden">
+
+        <div class="page-heading">
+          <p class="eyebrow">MAKE YOUR MARK</p>
+
+          <h2>
+            DROP<br>
+            <span>A LINE.</span>
+          </h2>
+
+          <p>
+            Your line becomes visible to the public community after publishing.
+          </p>
+        </div>
+
+        <form id="dropForm" class="drop-form">
+
+          <input id="editingId" type="hidden">
+
+          <label>
+            Username
+
+            <input
+              id="usernameInput"
+              type="text"
+              maxlength="24"
+              placeholder="@yourname"
+              required
+            >
+          </label>
+
+          <label>
+            Profile picture
+
+            <input
+              id="pfpInput"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+            >
+
+            <small>
+              JPG, PNG or WEBP. Maximum 3 MB.
+            </small>
+          </label>
+
+          <label>
+            Category
+
+            <select id="categoryInput" required>
+              <option value="">Choose a category</option>
+              <option value="Roast">Roast</option>
+              <option value="Flirting">Flirting</option>
+              <option value="Funny">Funny</option>
+              <option value="Savage">Savage</option>
+              <option value="Wholesome">Wholesome</option>
+              <option value="Random">Random</option>
+            </select>
+          </label>
+
+          <label>
+            Message / Line
+
+            <textarea
+              id="messageInput"
+              maxlength="500"
+              rows="7"
+              placeholder="Write something worth ranking..."
+              required
+            ></textarea>
+
+            <small>
+              <span id="messageCount">0</span>/500
+            </small>
+          </label>
+
+          <label>
+            Optional image
+
+            <input
+              id="imageInput"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+            >
+
+            <small>
+              JPG, PNG or WEBP. Maximum 5 MB.
+            </small>
+          </label>
+
+          <div class="form-actions">
+            <button
+              id="publishButton"
+              class="primary-button"
+              type="submit"
+            >
+              DROP IT
+            </button>
+
+            <button
+              id="cancelEditButton"
+              class="secondary-button hidden"
+              type="button"
+            >
+              CANCEL EDIT
+            </button>
+          </div>
+
+          <p id="formStatus" class="form-status"></p>
+        </form>
+      </section>
+
+
+      <!-- PROFILE -->
+      <section id="profileView" class="view hidden">
+
+        <div class="page-heading">
+          <p class="eyebrow">YOUR SPACE</p>
+
+          <h2>
+            MY<br>
+            <span>PROFILE.</span>
+          </h2>
+
+          <p>
+            Your submitted lines and community score.
+          </p>
+        </div>
+
+        <div id="profileSummary" class="profile-summary"></div>
+
+        <div id="profilePosts" class="feed"></div>
+      </section>
+
+    </main>
+
+
+    <!-- BOTTOM NAVIGATION -->
+    <nav class="bottom-nav">
+
+      <a href="#home" data-route="home">
+        HOME
+      </a>
+
+      <a href="#rank" data-route="rank">
+        RANK
+      </a>
+
+      <a href="#drop" data-route="drop" class="drop-nav">
+        DROP
+      </a>
+
+      <a href="#profile" data-route="profile">
+        PROFILE
+      </a>
+
+    </nav>
+  </div>
+
+
+  <!-- POST TEMPLATE -->
+  <template id="postTemplate">
+
+    <article class="post-card">
+
+      <div class="post-head">
+
+        <div class="identity">
+          <img class="avatar" alt="Profile picture">
+
+          <div>
+            <strong class="post-username"></strong>
+            <span class="post-time"></span>
+          </div>
+        </div>
+
+        <span class="post-category"></span>
+      </div>
+
+      <p class="post-message"></p>
+
+      <img
+        class="post-image hidden"
+        alt="Attached post image"
+      >
+
+      <div class="post-actions">
+
+        <button class="vote-button" type="button">
+          <span>▲</span>
+          <span class="vote-count">0</span>
+        </button>
+
+        <button class="copy-button" type="button">
+          COPY
+        </button>
+
+        <button
+          class="edit-button owner-only hidden"
+          type="button"
+        >
+          EDIT
+        </button>
+
+        <button
+          class="delete-button owner-only hidden"
+          type="button"
+        >
+          DELETE
+        </button>
+
+      </div>
+    </article>
+  </template>
+
+
+  <!-- app.js alag JavaScript file hai -->
+  <!-- type="module" zaroori hai kyunki app.js Firebase imports use karta hai -->
+  <script type="module" src="app.js"></script>
+
+</body>
+  </html>
